@@ -2,6 +2,16 @@
 
 let toastTimeoutId;
 
+const navMenu = document.querySelector('.nav-menu');
+if (navMenu) {
+  const mobileNav = window.matchMedia('(max-width: 760px)');
+  const syncNavMenu = () => {
+    navMenu.open = !mobileNav.matches;
+  };
+  syncNavMenu();
+  mobileNav.addEventListener('change', syncNavMenu);
+}
+
 function showToast(message, tone = 'success') {
   const toast = document.getElementById('gb-toast');
   if (!toast) return;
