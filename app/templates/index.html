@@ -3,6 +3,7 @@
 {% block content %}
 <section class="hero hero-home">
   <div class="hero-copy">
+    <span class="home-lobby-label"><i class="signal-dot" aria-hidden="true"></i> ETHIOPIA'S COMPETITIVE PLAYER HUB</span>
     <p class="eyebrow">{{ t('home_eyebrow', locale) }}</p>
     <h1>{{ t('hero_title', locale) }}</h1>
     <p class="hero-description">{{ t('hero_subtitle', locale) }}</p>
@@ -18,6 +19,11 @@
       <span><i class="signal-dot" aria-hidden="true"></i> {{ t('home_verified_results', locale) }}</span>
       <span>{{ t('home_city_rankings', locale) }}</span>
       <span>{{ t('home_public_passports', locale) }}</span>
+    </div>
+    <div class="home-proof-strip">
+      <span><strong>01</strong> REAL MATCHES</span>
+      <span><strong>02</strong> LOCAL CUPS</span>
+      <span><strong>03</strong> YOUR NEXT LEVEL</span>
     </div>
   </div>
 
@@ -35,7 +41,7 @@
     </div>
     <div class="showcase-players">
       {% for player in featured_players %}
-        <a class="showcase-player" href="/p/{{ player.public_identifier }}">
+        <a class="showcase-player{% if player.rank == 1 %} is-leader{% endif %}" href="/p/{{ player.public_identifier }}">
           <span class="showcase-rank">{{ '%02d' | format(player.rank) }}</span>
           <span class="player-monogram" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
           <span class="showcase-player-name"><strong>{{ player.display_name }}</strong><small>{{ player.city }}{% if player.is_demo %} · DEMO{% endif %}</small></span>
@@ -45,7 +51,7 @@
         <div class="showcase-empty">{{ t('home_empty_players', locale) }}</div>
       {% endfor %}
     </div>
-    <div class="showcase-footer"><span>{{ t('home_ratings_source', locale) }}</span><span>01 / 03</span></div>
+    <div class="showcase-footer"><span>{{ t('home_ratings_source', locale) }}</span><a href="/leaderboards">VIEW ALL RANKS <span aria-hidden="true">↗</span></a></div>
   </div>
 </section>
 

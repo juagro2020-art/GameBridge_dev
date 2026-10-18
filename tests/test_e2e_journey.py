@@ -63,6 +63,13 @@ async def test_full_e2e_registration_and_analytics(client, db_session):
     passport_resp = await client.get(f"/p/{public_id}")
     assert passport_resp.status_code == 200
     assert "E2E Tester" in passport_resp.text
+    assert 'class="profile-hero"' in passport_resp.text
+    assert 'class="profile-stats"' in passport_resp.text
+
+    dashboard_resp = await client.get("/dashboard")
+    assert dashboard_resp.status_code == 200
+    assert "Welcome back" in dashboard_resp.text
+    assert 'class="dashboard-rank-card"' in dashboard_resp.text
 
     # 3. Share card download
     card_resp = await client.get(f"/p/{public_id}/card.png")
@@ -75,6 +82,25 @@ async def test_full_e2e_registration_and_analytics(client, db_session):
     metrics = analytics_resp.json()
     assert metrics["total_registrations"] >= 1
     assert "match_completion_rate" in metrics
+
+@pytest.mark.asyncio
+async def test_leaderboard_renders_ranked_player_cards(client, db_session):
+    await UserService.register_user(db_session, "ranking_ui_player", "Ranking UI Player")
+
+    response = await client.get("/leaderboards")
+
+    assert response.status_code == 200
+    assert "Top players" in response.text
+    assert "Full leaderboard" in response.text
+    assert "Ranking UI Player" in response.text
+
+@pytest.mark.asyncio
+async def test_homepage_renders_competitive_lobby(client):
+    response = await client.get("/")
+
+    assert response.status_code == 200
+    assert "ETHIOPIA'S COMPETITIVE PLAYER HUB" in response.text
+    assert "YOUR NEXT LEVEL" in response.text
 
 @pytest.mark.asyncio
 async def test_demo_safe_reset_isolation(db_session):

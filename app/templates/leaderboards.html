@@ -1,14 +1,19 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="page-header">
-  <div><p class="eyebrow">NATIONAL / CITY / RAPID</p>
-    <h1>{{ t('nav_leaderboards', locale) }}</h1>
-    <p>Platform standings by game and mode, updated after confirmed cup matches.</p>
-  </div>
-</div>
+{% block title %}{{ t('nav_leaderboards', locale) }}{% endblock %}
 
-<form method="GET" action="/leaderboards" class="filter-bar">
+{% block content %}
+<section class="ranking-page">
+  <header class="ranking-heading">
+    <div>
+      <p class="eyebrow">GAMEBRIDGE / COMPETITIVE PLAY</p>
+      <h1>{{ t('nav_leaderboards', locale) }}</h1>
+      <p>Every match moves you up. See who's leading the Ethiopian chess ladder.</p>
+    </div>
+    <span class="ranking-live"><i class="signal-dot" aria-hidden="true"></i> LIVE RANKINGS</span>
+  </header>
+
+  <form method="GET" action="/leaderboards" class="filter-bar ranking-filters">
     <div class="form-group">
       <label for="leaderboard-search">{{ t('label_search', locale) }}</label>
       <input id="leaderboard-search" type="search" name="q" value="{{ search_query }}" class="form-input" placeholder="{{ t('placeholder_player_search', locale) }}">
@@ -21,7 +26,6 @@
         <option value="Hawassa" {% if selected_city == 'Hawassa' %}selected{% endif %}>Hawassa</option>
       </select>
     </div>
-
     <div class="form-group">
       <label for="leaderboard-game">{{ t('label_game', locale) }}</label>
       <select id="leaderboard-game" name="game" class="form-select">
@@ -29,59 +33,70 @@
         <option value="chess_com" {% if selected_game == 'chess_com' %}selected{% endif %}>Chess.com Rapid</option>
       </select>
     </div>
-    <button class="btn btn-primary" type="submit">{{ t('label_search', locale) }}</button>
-</form>
+    <button class="btn btn-primary" type="submit">{{ t('label_search', locale) }} <span aria-hidden="true">↗</span></button>
+  </form>
 
-<div class="leaderboard-meta">{{ players | length }} players shown · Top 50 for this game and mode</div>
-<div class="table-responsive leaderboard-table-wrap">
-  <table class="table leaderboard-table">
-    <thead>
-      <tr>
-        <th style="width: 60px;">Rank</th>
-        <th>Player</th>
-        <th>{{ t('label_city', locale) }}</th>
-        <th>{{ t('label_tier', locale) }}</th>
-        <th style="text-align: right;">{{ t('label_elo', locale) }}</th>
-        <th style="text-align: right;">{{ t('label_matches', locale) }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for player in players %}
-        <tr>
-          <td class="rank-cell" data-label="Rank">
-            {% if player.rank <= 3 %}
-              <span class="rank-medal rank-{{ ['first', 'second', 'third'][player.rank - 1] }}">{{ '%02d' | format(player.rank) }}</span>
-            {% else %}<strong>#{{ player.rank }}</strong>{% endif %}
-          </td>
-          <td class="player-cell" data-label="Player">
-            <a href="/p/{{ player.public_identifier }}" class="leaderboard-player-link">
-              {{ player.display_name }}
-            </a>
-            {% if player.is_demo %}
-              <span style="font-size: 0.65rem; color: var(--accent-gold); margin-left: 0.25rem;">[DEMO]</span>
-            {% endif %}
-          </td>
-          <td class="city-cell" data-label="{{ t('label_city', locale) }}">{{ player.city }}</td>
-          <td class="tier-cell" data-label="{{ t('label_tier', locale) }}">
-            <span class="badge {% if player.tier == 'Diamond' %}badge-blue{% elif player.tier == 'Platinum' %}badge-green{% elif player.tier == 'Gold' %}badge-gold{% else %}badge-gray{% endif %}">
-              {{ player.tier }}
-            </span>
-          </td>
-          <td class="rating-cell" data-label="{{ t('label_elo', locale) }}">
-            {{ player.elo | int }}
-          </td>
-          <td class="matches-cell" data-label="{{ t('label_matches', locale) }}">
-            {{ player.matches_played }}
-          </td>
-        </tr>
-      {% else %}
-        <tr>
-          <td colspan="6" class="empty-table-cell">
-            {{ t('empty_leaderboard', locale) }}
-          </td>
-        </tr>
+  {% if players and not search_query %}
+  <section class="podium-section" aria-labelledby="podium-title">
+    <div class="ranking-section-heading">
+      <div>
+        <p class="eyebrow">THE ONES TO BEAT</p>
+        <h2 id="podium-title">Top players</h2>
+      </div>
+      <span>{{ selected_game | replace('_', '.') | upper }} / RAPID</span>
+    </div>
+    <div class="ranking-podium">
+      {% for player in players[:3] %}
+      <a class="podium-card podium-rank-{{ player.rank }}" href="/p/{{ player.public_identifier }}">
+        <span class="podium-crown" aria-hidden="true">{% if player.rank == 1 %}CHAMPION{% else %}TOP {{ player.rank }}{% endif %}</span>
+        <span class="podium-avatar" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
+        <strong class="podium-name">{{ player.display_name }}</strong>
+        <span class="podium-city">{{ player.city }}</span>
+        <span class="podium-rating">{{ player.elo | int }} <small>ELO</small></span>
+        <span class="podium-tier">{{ player.tier }} TIER</span>
+      </a>
       {% endfor %}
-    </tbody>
-  </table>
-</div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="ranking-list-section" aria-labelledby="ranking-list-title">
+    <div class="ranking-section-heading">
+      <div>
+        <p class="eyebrow">{% if search_query %}PLAYER SEARCH{% else %}CLIMB THE LADDER{% endif %}</p>
+        <h2 id="ranking-list-title">{% if search_query %}Search results{% else %}Full leaderboard{% endif %}</h2>
+      </div>
+      <span class="ranking-count">{{ players | length }} PLAYERS <i aria-hidden="true"></i> TOP 50</span>
+    </div>
+
+    <div class="ranking-list">
+      {% for player in players %}
+      <a class="ranking-row{% if player.rank == 1 %} is-first{% endif %}" href="/p/{{ player.public_identifier }}">
+        <span class="ranking-position">
+          {% if player.rank <= 3 %}
+          <span class="rank-medal rank-{{ ['first', 'second', 'third'][player.rank - 1] }}">{{ '%02d' | format(player.rank) }}</span>
+          {% else %}
+          <span class="rank-number">#{{ player.rank }}</span>
+          {% endif %}
+        </span>
+        <span class="ranking-avatar" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
+        <span class="ranking-player">
+          <strong>{{ player.display_name }}</strong>
+          <small>{{ player.city }}{% if player.is_demo %} <span class="demo-tag">DEMO</span>{% endif %}</small>
+        </span>
+        <span class="ranking-tier badge {% if player.tier == 'Diamond' %}badge-blue{% elif player.tier == 'Platinum' %}badge-green{% elif player.tier == 'Gold' %}badge-gold{% else %}badge-gray{% endif %}">{{ player.tier }}</span>
+        <span class="ranking-rating"><strong>{{ player.elo | int }}</strong><small>ELO</small></span>
+        <span class="ranking-matches"><strong>{{ player.matches_played }}</strong><small>{{ t('label_matches', locale) }}</small></span>
+        <span class="ranking-arrow" aria-hidden="true">↗</span>
+      </a>
+      {% else %}
+      <div class="ranking-empty">
+        <span aria-hidden="true">◎</span>
+        <strong>{{ t('empty_leaderboard', locale) }}</strong>
+        <p>Try another player name or choose a different city.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</section>
 {% endblock %}

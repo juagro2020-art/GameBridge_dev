@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}{{ player.display_name }} — {{ t('nav_passport', locale) }}{% endblock %}
+
 {% block og_tags %}
 <meta property="og:title" content="{{ player.display_name }} — Gamer Passport">
 <meta property="og:description" content="Ethiopian Esports Ladder Profile: {{ platform_rating.tier if platform_rating else 'Bronze' }} ({{ (platform_rating.elo | int) if platform_rating else 1200 }} Elo)">
@@ -8,116 +10,145 @@
 {% endblock %}
 
 {% block content %}
-<div class="passport-header">
-  <div class="player-identity">
-    <span class="player-avatar" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
-    <div>
-      <span class="eyebrow">{{ t('nav_passport', locale) }}</span>
+<section class="profile-hero">
+  <div class="profile-hero-pattern" aria-hidden="true"></div>
+  <div class="profile-hero-top">
+    <span class="profile-kicker"><span class="profile-kicker-mark">GB</span> {{ t('nav_passport', locale) }}</span>
+    {% if game_accounts %}
+    <span class="profile-verified"><span aria-hidden="true">✓</span> {{ t('status_verified', locale) }}</span>
+    {% else %}
+    <span class="profile-community">COMMUNITY PLAYER</span>
+    {% endif %}
+  </div>
+  <div class="profile-hero-main">
+    <div class="profile-avatar-wrap">
+      <span class="profile-avatar" aria-hidden="true">{{ player.display_name[:1] | upper }}</span>
+      <span class="profile-avatar-status" aria-hidden="true"></span>
+    </div>
+    <div class="profile-identity">
+      <p class="profile-player-id">{{ player.public_identifier }}</p>
       <h1>{{ player.display_name }}</h1>
-      <p>{{ player.city }} <span aria-hidden="true">·</span> {{ player.public_identifier }}</p>
+      <p class="profile-location"><span aria-hidden="true">⌖</span> {{ player.city }} <span class="profile-location-divider">/</span> ETHIOPIA</p>
+    </div>
+    <div class="profile-actions">
+      <button type="button" onclick="copyPassportLink(this)" class="btn btn-outline btn-sm" data-copied="{{ t('passport_link_copied', locale) }}" data-copy-error="{{ t('passport_link_copy_failed', locale) }}">{{ t('passport_copy_link', locale) }}</button>
+      <a href="/p/{{ player.public_identifier }}/card.png" download class="btn btn-primary btn-sm">{{ t('passport_download_card', locale) }} <span aria-hidden="true">↗</span></a>
     </div>
   </div>
-  <div class="player-actions">
-    <button type="button" onclick="copyPassportLink(this)" class="btn btn-outline btn-sm" data-copied="{{ t('passport_link_copied', locale) }}" data-copy-error="{{ t('passport_link_copy_failed', locale) }}">{{ t('passport_copy_link', locale) }}</button>
-    <a href="/p/{{ player.public_identifier }}/card.png" download class="btn btn-primary btn-sm">{{ t('passport_download_card', locale) }}</a>
+  <div class="profile-hero-bottom">
+    <span>GAMEBRIDGE COMPETITOR</span>
+    {% if player.is_demo %}<span class="profile-demo">DEMO PROFILE</span>{% endif %}
+    <span>PUBLIC PLAYER CARD <span aria-hidden="true">↗</span></span>
   </div>
-</div>
+</section>
 
-<div class="grid">
-  <!-- Platform Elo & Tier -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">{{ t('label_elo', locale) }}</h3>
-      <span class="badge {% if platform_rating and platform_rating.tier == 'Diamond' %}badge-blue{% elif platform_rating and platform_rating.tier == 'Platinum' %}badge-green{% elif platform_rating and platform_rating.tier == 'Gold' %}badge-gold{% else %}badge-gray{% endif %}">
-        {{ platform_rating.tier if platform_rating else 'Bronze' }}
-      </span>
-    </div>
-    <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-      <span style="font-size: 2.4rem; font-weight: 800; color: var(--accent-gold);">
-        {{ (platform_rating.elo | int) if platform_rating else 1200 }}
-      </span>
-      <span style="color: var(--text-muted); font-size: 0.85rem;">{{ t('passport_elo_points', locale) }}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-top: 0.5rem;">
-      <span>{{ t('passport_record', locale) }}: <strong>{{ win_count }}W - {{ loss_count }}L{% if draw_count %} - {{ draw_count }}D{% endif %}</strong></span>
-      <span>{{ t('label_win_rate', locale) }}: <strong>{{ win_rate }}%</strong></span>
-    </div>
-  </div>
+<section class="profile-stats" aria-label="Player statistics">
+  <article class="profile-stat-card profile-stat-rating">
+    <span class="profile-stat-label">{{ t('label_elo', locale) }}</span>
+    <strong>{{ (platform_rating.elo | int) if platform_rating else 1200 }}</strong>
+    <span class="profile-stat-foot"><span class="profile-tier-dot"></span>{{ platform_rating.tier if platform_rating else 'Bronze' }} {{ t('label_tier', locale) }}</span>
+  </article>
+  <article class="profile-stat-card">
+    <span class="profile-stat-label">{{ t('label_matches', locale) }}</span>
+    <strong>{{ total_matches }}</strong>
+    <span class="profile-stat-foot">{{ win_count }}W <span aria-hidden="true">·</span> {{ loss_count }}L{% if draw_count %} <span aria-hidden="true">·</span> {{ draw_count }}D{% endif %}</span>
+  </article>
+  <article class="profile-stat-card">
+    <span class="profile-stat-label">{{ t('label_win_rate', locale) }}</span>
+    <strong>{{ win_rate }}<small>%</small></strong>
+    <span class="profile-stat-foot">{{ t('passport_record', locale) }}: {{ win_count }} / {{ total_matches }}</span>
+  </article>
+</section>
 
-  <!-- Verified Game Accounts -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">{{ t('passport_verified_accounts', locale) }}</h3>
-      {% if game_accounts %}<span class="badge badge-green">{{ t('status_verified', locale) }}</span>{% else %}<span class="badge badge-gray">{{ t('passport_no_verified_accounts', locale) }}</span>{% endif %}
+<div class="profile-content-grid">
+  <section class="profile-panel" aria-labelledby="profile-accounts-title">
+    <div class="profile-panel-heading">
+      <div>
+        <p class="eyebrow">CONNECTED PLAY</p>
+        <h2 id="profile-accounts-title">{{ t('passport_verified_accounts', locale) }}</h2>
+      </div>
+      <span class="profile-panel-icon" aria-hidden="true">↗</span>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <div class="profile-account-list">
       {% for acc in game_accounts %}
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #0f172a; padding: 0.6rem 0.75rem; border-radius: 6px;">
-          <div>
-            <strong>{{ acc.game_key | upper }}</strong>: <span>{{ acc.external_username }}</span>
-          </div>
-          <span class="badge badge-green">✓ VERIFIED</span>
-        </div>
+      <div class="profile-account-row">
+        <span class="profile-game-mark">{% if acc.game_key == 'lichess' %}L{% else %}C{% endif %}</span>
+        <span class="profile-account-name"><strong>{{ acc.game_key | replace('_', '.') | title }}</strong><small>{{ acc.external_username }}</small></span>
+        <span class="profile-account-check" aria-label="{{ t('status_verified', locale) }}">✓</span>
+      </div>
       {% else %}
-        <p style="color: var(--text-muted); font-size: 0.9rem;">{{ t('passport_no_verified_accounts', locale) }}</p>
+      <div class="profile-no-accounts">
+        <span aria-hidden="true">◎</span>
+        <p>{{ t('passport_no_verified_accounts', locale) }}</p>
+      </div>
       {% endfor %}
     </div>
-
-    <!-- Fair play status -->
-    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
-      {{ t('label_fair_play', locale) }}: <strong>{{ t('passport_fair_play_untracked', locale) }}</strong>
+    <div class="profile-fair-play">
+      <span>{{ t('label_fair_play', locale) }}</span>
+      <strong>{{ t('passport_fair_play_untracked', locale) }}</strong>
     </div>
-  </div>
-</div>
+  </section>
 
-<!-- Milestone Badges -->
-<div style="margin-top: 2rem;">
-  <h2 style="font-size: 1.3rem; margin-bottom: 0.75rem;">{{ t('passport_badges', locale) }}</h2>
-  <div class="grid">
-    {% for b in badges %}
-      <div class="card" style="border-left: 4px solid var(--accent-gold);">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <span class="badge-mark" aria-hidden="true">GB</span>
-          <div>
-            {% set badge_name_key = 'badge_' ~ b.key %}
-            {% set badge_desc_key = badge_name_key ~ '_desc' %}
-            <h3 style="font-size: 1.05rem; font-weight: bold;">{% if t(badge_name_key, locale) == badge_name_key %}{{ b.name }}{% else %}{{ t(badge_name_key, locale) }}{% endif %}</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">{% if t(badge_desc_key, locale) == badge_desc_key %}{{ b.description }}{% else %}{{ t(badge_desc_key, locale) }}{% endif %}</p>
-          </div>
+  <section class="profile-panel" aria-labelledby="profile-badges-title">
+    <div class="profile-panel-heading">
+      <div>
+        <p class="eyebrow">MILESTONES</p>
+        <h2 id="profile-badges-title">{{ t('passport_badges', locale) }}</h2>
+      </div>
+      <span class="profile-badge-count">{{ badges | length }} {{ 'BADGE' if badges | length == 1 else 'BADGES' }}</span>
+    </div>
+    <div class="profile-badge-list">
+      {% for b in badges %}
+        {% set badge_name_key = 'badge_' ~ b.key %}
+        {% set badge_desc_key = badge_name_key ~ '_desc' %}
+        <div class="profile-badge-row">
+          <span class="profile-badge-mark" aria-hidden="true">✦</span>
+          <span><strong>{% if t(badge_name_key, locale) == badge_name_key %}{{ b.name }}{% else %}{{ t(badge_name_key, locale) }}{% endif %}</strong><small>{% if t(badge_desc_key, locale) == badge_desc_key %}{{ b.description }}{% else %}{{ t(badge_desc_key, locale) }}{% endif %}</small></span>
         </div>
-      </div>
-    {% else %}
-      <div class="card" style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--text-muted);">
-        {{ t('passport_no_badges', locale) }}
-      </div>
-    {% endfor %}
-  </div>
+      {% else %}
+        <div class="profile-no-accounts">
+          <span aria-hidden="true">✧</span>
+          <p>{{ t('passport_no_badges', locale) }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
 </div>
 
-<div style="margin-top: 2rem;">
-  <h2 style="font-size: 1.3rem; margin-bottom: 0.75rem;">{{ t('passport_tournaments', locale) }}</h2>
-  <div class="passport-history">
+<section class="profile-history-section">
+  <div class="profile-panel-heading">
+    <div>
+      <p class="eyebrow">ON THE BRACKET</p>
+      <h2>{{ t('passport_tournaments', locale) }}</h2>
+    </div>
+    <a href="/tournaments" class="text-link">{{ t('nav_tournaments', locale) }} <span aria-hidden="true">↗</span></a>
+  </div>
+  <div class="profile-history">
     {% for tournament in tournament_history %}
-      <a href="/tournaments/{{ tournament.slug }}" class="passport-history-row">
-        <span><strong>{{ tournament.name }}</strong><small>{{ tournament.city }} · {{ tournament.game_key | upper }} / {{ tournament.mode | title }}</small></span>
+      <a href="/tournaments/{{ tournament.slug }}" class="profile-history-row">
+        <span class="profile-history-mark" aria-hidden="true">{{ '%02d' | format(loop.index) }}</span>
+        <span class="profile-history-name"><strong>{{ tournament.name }}</strong><small>{{ tournament.city }} <span aria-hidden="true">·</span> {{ tournament.game_key | upper }} / {{ tournament.mode | title }}</small></span>
         <span class="badge {% if tournament.status == 'completed' %}badge-gray{% elif tournament.status == 'in_progress' %}badge-gold{% else %}badge-green{% endif %}">{{ t('status_' ~ tournament.status, locale) }}</span>
+        <span class="profile-history-arrow" aria-hidden="true">↗</span>
       </a>
     {% else %}
-      <p class="empty-state">{{ t('passport_no_tournaments', locale) }}</p>
+      <p class="profile-empty-history">{{ t('passport_no_tournaments', locale) }}</p>
     {% endfor %}
   </div>
-</div>
+</section>
 
-<!-- Share Card Preview -->
-<div style="margin-top: 2rem;">
-  <h2 style="font-size: 1.3rem; margin-bottom: 0.75rem;">{{ t('passport_share_card', locale) }}</h2>
-  <div class="card" style="align-items: center; padding: 1.5rem; background: #0b1120;">
-    <img src="/p/{{ player.public_identifier }}/card.png" alt="Passport Share Card" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);">
-    <a href="/p/{{ player.public_identifier }}/card.png" download class="btn btn-outline btn-sm" style="margin-top: 1rem;">
-      {{ t('passport_download_card', locale) }}
-    </a>
+<section class="profile-share-section">
+  <div>
+    <p class="eyebrow">TAKE IT WITH YOU</p>
+    <h2>{{ t('passport_share_card', locale) }}</h2>
+    <p>A snapshot of your profile, ready to share with your gaming community.</p>
+    <a href="/p/{{ player.public_identifier }}/card.png" download class="btn btn-primary">{{ t('passport_download_card', locale) }} <span aria-hidden="true">↓</span></a>
   </div>
-</div>
+  <div class="profile-share-preview">
+    <img src="/p/{{ player.public_identifier }}/card.png" alt="{{ player.display_name }} — Gamer Passport share card">
+  </div>
+</section>
+
 <script>
 async function copyPassportLink(button) {
   try {
